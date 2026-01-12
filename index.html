@@ -2,20 +2,20 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://lib.baomitu.com/aframe/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.staticfile.org/mind-ar/1.1.5/mindar-image-aframe.prod.js"></script>
     
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; }
         #debug-info {
             position: fixed; top: 10px; left: 10px; z-index: 10000;
-            color: lime; font-family: monospace; font-size: 12px;
-            background: rgba(0,0,0,0.8); pointer-events: none;
+            color: lime; font-family: monospace; font-size: 14px;
+            background: rgba(0,0,0,0.8); padding: 5px; border-radius: 4px;
         }
     </style>
 </head>
 <body>
-    <div id="debug-info">Статус: Инициализация...</div>
+    <div id="debug-info">Статус: Поиск библиотек...</div>
 
     <a-scene 
         mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiScanning: yes;" 
@@ -42,20 +42,22 @@
         const videoEl = document.querySelector('a-video');
         const videoFile = document.querySelector('#vid');
 
-        // Отслеживаем этапы загрузки
+        // Проверка успешной загрузки библиотек
+        window.onload = () => {
+            info.innerHTML = "Статус: Библиотеки загружены. Ждем камеру...";
+        };
+
         sceneEl.addEventListener("arReady", () => {
-            info.innerHTML = "Статус: Камера включена. Наведи на маркер!";
-            setTimeout(() => { info.style.display = 'none'; }, 3000);
+            info.innerHTML = "Статус: ГОТОВО. Наведи на маркер!";
+            setTimeout(() => { info.style.display = 'none'; }, 5000);
         });
 
         sceneEl.addEventListener("arError", (event) => {
-            info.innerHTML = "Статус: ОШИБКА КАМЕРЫ! " + event.detail.error;
-            info.style.color = "red";
+            info.innerHTML = "Статус: ОШИБКА КАМЕРЫ!";
+            console.error(event);
         });
 
         targetEl.addEventListener("targetFound", () => {
-            info.style.display = 'block';
-            info.innerHTML = "МАРКЕР НАЙДЕН";
             videoEl.setAttribute("visible", "true");
             videoFile.play();
         });
@@ -65,7 +67,6 @@
             videoFile.pause();
         });
 
-        // Попытка принудительно запустить камеру при клике, если она зависла
         document.body.addEventListener('click', () => {
             videoFile.play().then(() => videoFile.pause());
         }, {once: true});
