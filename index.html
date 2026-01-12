@@ -1,21 +1,23 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://lib.baomitu.com/aframe/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.staticfile.org/mind-ar/1.1.5/mindar-image-aframe.prod.js"></script>
+    <script src="./aframe-v1.js"></script>
+    <script src="./mindar-v1.js"></script>
     
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; }
-        #debug-info {
-            position: fixed; top: 10px; left: 10px; z-index: 10000;
-            color: lime; font-family: monospace; font-size: 14px;
-            background: rgba(0,0,0,0.8); padding: 5px; border-radius: 4px;
+        /* Инструкция для пользователя */
+        #instruction {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            color: white; z-index: 10; pointer-events: none; 
+            font-family: sans-serif; text-align: center; padding: 20px;
         }
     </style>
 </head>
 <body>
-    <div id="debug-info">Статус: Поиск библиотек...</div>
+    <div id="instruction">Загрузка... <br> (если ничего не происходит, попробуйте нажать на экран)</div>
 
     <a-scene 
         mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiScanning: yes;" 
@@ -31,42 +33,37 @@
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity id="target" mindar-image-target="targetIndex: 0">
-            <a-video src="#vid" width="1" height="0.6" visible="false"></a-video>
+            <a-video id="ar-video" src="#vid" width="1" height="0.6" visible="false"></a-video>
         </a-entity>
     </a-scene>
 
     <script>
-        const info = document.getElementById('debug-info');
+        const instruction = document.getElementById('instruction');
         const sceneEl = document.querySelector('a-scene');
         const targetEl = document.querySelector('#target');
-        const videoEl = document.querySelector('a-video');
+        const arVideo = document.querySelector('#ar-video');
         const videoFile = document.querySelector('#vid');
 
-        // Проверка успешной загрузки библиотек
-        window.onload = () => {
-            info.innerHTML = "Статус: Библиотеки загружены. Ждем камеру...";
-        };
-
+        // Когда система дополненной реальности готова
         sceneEl.addEventListener("arReady", () => {
-            info.innerHTML = "Статус: ГОТОВО. Наведи на маркер!";
-            setTimeout(() => { info.style.display = 'none'; }, 5000);
+            instruction.innerHTML = "Наведи камеру на фотографию";
+            // Через 5 секунд скрываем надпись совсем
+            setTimeout(() => { instruction.style.display = 'none'; }, 5000);
         });
 
-        sceneEl.addEventListener("arError", (event) => {
-            info.innerHTML = "Статус: ОШИБКА КАМЕРЫ!";
-            console.error(event);
-        });
-
+        // Событие: Фото найдено
         targetEl.addEventListener("targetFound", () => {
-            videoEl.setAttribute("visible", "true");
+            arVideo.setAttribute("visible", "true");
             videoFile.play();
         });
 
+        // Событие: Фото потеряно из вида
         targetEl.addEventListener("targetLost", () => {
-            videoEl.setAttribute("visible", "false");
+            arVideo.setAttribute("visible", "false");
             videoFile.pause();
         });
 
+        // Обязательный клик для разблокировки видео в браузерах
         document.body.addEventListener('click', () => {
             videoFile.play().then(() => videoFile.pause());
         }, {once: true});
