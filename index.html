@@ -2,33 +2,32 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>AR Project Final</title>
+    <title>AR Project Final Test</title>
     
-    <script src="./aframe.js"></script>
-    <script src="./mindar.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-aframe.prod.js"></script>
     
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
+        body { margin: 0; overflow: hidden; background: #000; }
         #overlay {
             position: fixed; inset: 0; display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            color: white; background: #000; z-index: 10000;
+            color: white; background: #111; z-index: 10000;
         }
         button {
             padding: 15px 30px; background: #22c55e; color: white;
             border: none; border-radius: 25px; font-weight: bold; cursor: pointer;
         }
-        #status { margin-top: 15px; color: #888; font-size: 14px; }
     </style>
 </head>
 <body>
     <div id="overlay">
-        <button id="startBtn">ОТКРЫТЬ КАМЕРУ</button>
-        <div id="status">Нажмите кнопку для запуска</div>
+        <button id="startBtn">ЗАПУСТИТЬ КАМЕРУ</button>
+        <p id="msg" style="color: gray; margin-top: 10px;">Нажмите кнопку для старта</p>
     </div>
 
     <a-scene 
-        mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: yes;" 
+        mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no;" 
         embedded vr-mode-ui="enabled: false" 
         device-orientation-permission-ui="enabled: false">
         
@@ -38,53 +37,35 @@
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
         <a-entity id="target" mindar-image-target="targetIndex: 0">
-            <a-video src="#vid" width="1" height="0.6" position="0 0 0"></a-video>
+            <a-video src="#vid" width="1" height="0.6"></a-video>
         </a-entity>
     </a-scene>
 
     <script>
         const startBtn = document.getElementById('startBtn');
         const overlay = document.getElementById('overlay');
-        const status = document.getElementById('status');
-        const sceneEl = document.querySelector('a-scene');
+        const msg = document.getElementById('msg');
 
         startBtn.addEventListener('click', () => {
-            status.innerText = "Запуск системы...";
+            const sceneEl = document.querySelector('a-scene');
+            const arSystem = sceneEl.systems["mindar-image-system"];
             
-            // Даем маленькую задержку, чтобы браузер успел обработать библиотеки
-            setTimeout(() => {
-                try {
-                    const arSystem = sceneEl.systems["mindar-image-system"];
-                    
-                    if (arSystem) {
-                        arSystem.start(); 
-                        
-                        // Разблокируем видео
-                        const video = document.querySelector('#vid');
-                        video.play().then(() => video.pause());
-
-                        sceneEl.addEventListener("arReady", () => {
-                            overlay.style.display = "none";
-                        });
-                    } else {
-                        // Если система не нашлась, пробуем перезагрузить компоненты
-                        status.innerText = "Ошибка: MindAR не найден в сцене. Проверьте mindar.js";
-                        status.style.color = "red";
-                    }
-                } catch (e) {
-                    status.innerText = "Критическая ошибка: " + e.message;
-                }
-            }, 300);
+            if (arSystem) {
+                arSystem.start();
+                // Фикс для видео на iPhone
+                document.querySelector('#vid').play().then(() => document.querySelector('#vid').pause());
+                
+                sceneEl.addEventListener("arReady", () => {
+                    overlay.style.display = "none";
+                });
+            } else {
+                msg.innerText = "Библиотека всё еще загружается... Подождите 5 секунд.";
+            }
         });
 
-        // Логика появления видео
         const targetEntity = document.querySelector('#target');
-        targetEntity.addEventListener("targetFound", () => {
-            document.querySelector('#vid').play();
-        });
-        targetEntity.addEventListener("targetLost", () => {
-            document.querySelector('#vid').pause();
-        });
+        targetEntity.addEventListener("targetFound", () => { document.querySelector('#vid').play(); });
+        targetEntity.addEventListener("targetLost", () => { document.querySelector('#vid').pause(); });
     </script>
 </body>
 </html>
