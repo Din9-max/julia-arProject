@@ -30,9 +30,12 @@
     </div>
 
     <a-scene 
-        mindar-image="imageTargetSrc: ./targets.mind; autoStart: false;" 
-        embedded vr-mode-ui="enabled: false" 
-        device-orientation-permission-ui="enabled: false">
+    mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: no;" 
+    embedded 
+    color-space="sRGB" 
+    renderer="colorManagement: true, physicallyCorrectLights" 
+    vr-mode-ui="enabled: false" 
+    device-orientation-permission-ui="enabled: false">
         
         <a-assets>
             <video id="vid" src="./video.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
@@ -46,40 +49,38 @@
 
     <script>
         const startBtn = document.getElementById('startBtn');
-        const status = document.getElementById('status');
-        const overlay = document.getElementById('overlay');
-        const sceneEl = document.querySelector('a-scene');
+const status = document.getElementById('status');
+const overlay = document.getElementById('overlay');
+const sceneEl = document.querySelector('a-scene');
 
-        startBtn.addEventListener('click', async () => {
-            status.innerText = "Запрашиваю доступ...";
-            
-            try {
-                // ПРИНУДИТЕЛЬНЫЙ ВЫЗОВ КАМЕРЫ ЧЕРЕЗ БРАУЗЕР
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                // Если получили доступ — закрываем поток и отдаем его MindAR
-                stream.getTracks().forEach(track => track.stop());
-                
-                status.innerText = "Загрузка AR-движка...";
-                
-                // Запускаем саму сцену
-                const arSystem = sceneEl.systems["mindar-image-system"];
-                if (arSystem) {
-                    arSystem.start();
-                }
+startBtn.addEventListener('click', async () => {
+    status.innerText = "Инициализация...";
+    
+    try {
+        // 1. Пробуем разбудить видеофайл
+        const video = document.querySelector('#vid');
+        video.play().then(() => video.pause());
 
-                // Видео разблокируем
-                document.querySelector('#vid').play().then(() => {
-                    document.querySelector('#vid').pause();
-                });
+        // 2. Ждем секунду, чтобы браузер «осознал» разрешение камеры
+        status.innerText = "Запуск видеопотока...";
+        
+        // 3. Запускаем систему MindAR
+        const arSystem = sceneEl.systems["mindar-image-system"];
+        if (arSystem) {
+            await arSystem.start(); // Ждем старта системы
+        }
 
-                overlay.style.display = "none";
-                
-            } catch (err) {
-                console.error(err);
-                status.innerHTML = "ОШИБКА: " + err.name + "<br>Проверь настройки разрешений в Safari/Chrome";
-                status.style.color = "#ff4444";
-            }
+        // 4. Убираем заставку только когда камера реально готова
+        sceneEl.addEventListener("arReady", () => {
+            overlay.style.display = "none";
         });
+
+    } catch (err) {
+        status.innerHTML = "Ошибка: " + err.message;
+        console.error(arError);
+    }
+});
     </script>
 </body>
 </html>
+
