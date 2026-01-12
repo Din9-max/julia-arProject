@@ -2,22 +2,23 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    
-    <script src="https://cdn.jsdelivr.net/npm/aframe@1.2.0/dist/aframe-master.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-aframe.prod.js"></script>
-    
+    <title>AR Project</title>
+    <script type="module">
+        import 'https://esm.sh/aframe@1.2.0';
+        import 'https://esm.sh/mind-ar@1.1.5/dist/mindar-image-aframe.prod.js';
+    </script>
+
     <style>
         body { margin: 0; overflow: hidden; background: #000; }
-        #loader {
-            position: fixed; inset: 0; display: flex; align-items: center;
-            justify-content: center; color: white; background: black; z-index: 999;
-            font-family: -apple-system, system-ui, sans-serif;
+        #status-bar {
+            position: fixed; top: 0; width: 100%; padding: 15px;
+            background: rgba(0,0,0,0.8); color: #00ff00;
+            text-align: center; font-family: monospace; z-index: 1000;
         }
     </style>
 </head>
 <body>
-    <div id="loader">Запуск камеры...</div>
+    <div id="status-bar">Установка соединения с AR-модулем...</div>
 
     <a-scene 
         mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiScanning: yes;" 
@@ -33,23 +34,29 @@
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity id="target" mindar-image-target="targetIndex: 0">
-            <a-video src="#vid" width="1" height="0.6"></a-video>
+            <a-video src="#vid" width="1" height="0.6" position="0 0 0"></a-video>
         </a-entity>
     </a-scene>
 
     <script>
-        const loader = document.getElementById('loader');
-        const sceneEl = document.querySelector('a-scene');
-        const video = document.querySelector('#vid');
-
-        // Скрываем загрузку только когда AR готова
-        sceneEl.addEventListener("arReady", () => {
-            loader.style.display = "none";
+        const status = document.getElementById('status-bar');
+        
+        // Ждем загрузки сцены
+        document.querySelector('a-scene').addEventListener('loaded', () => {
+            status.innerHTML = "Система готова. Ожидание камеры...";
         });
 
-        // На iPhone видео часто требует клика для старта
+        // Когда AR запустилась
+        document.querySelector('a-scene').addEventListener('arReady', () => {
+            status.innerHTML = "КАМЕРА ВКЛЮЧЕНА! Наведите на фото";
+            setTimeout(() => { status.style.display = 'none'; }, 5000);
+        });
+
+        // Обработка клика (для старта видео)
         window.addEventListener('click', () => {
-            video.play();
+            const v = document.querySelector('#vid');
+            v.play(); 
+            status.innerHTML = "Поиск маркера активирован...";
         });
     </script>
 </body>
