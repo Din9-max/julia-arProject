@@ -1,32 +1,59 @@
+<!DOCTYPE html>
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    
+    <style>
+      /* Убираем лишние кнопки и белые полосы */
+      body { margin: 0; overflow: hidden; }
+      #error-msg {
+        position: fixed; top: 10px; left: 10px; color: white; background: red; z-index: 999; display: none;
+      }
+    </style>
   </head>
   <body>
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-  <a-assets>
-    <video id="vid" src="./video.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
-  </a-assets>
-  <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-  <a-entity mindar-image-target="targetIndex: 0">
-    <a-video src="#vid" width="1" height="1" position="0 0 0"></a-video>
-  </a-entity>
-  </a-scene>
+    <div id="error-msg">Ошибка загрузки! Проверьте файлы.</div>
+
+    <a-scene 
+      mindar-image="imageTargetSrc: targets.mind; uiLoading: yes; uiScanning: yes;" 
+      color-space="sRGB" 
+      renderer="colorManagement: true, physicallyCorrectLights" 
+      vr-mode-ui="enabled: false" 
+      device-orientation-permission-ui="enabled: false">
+      
+      <a-assets>
+        <video id="vid" src="video.mp4" preload="auto" loop="true" muted playsinline webkit-playsinline crossorigin="anonymous"></video>
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-video src="#vid" width="1" height="0.6" position="0 0 0"></a-video>
+      </a-entity>
+    </a-scene>
 
     <script>
-      // Скрипт для запуска видео при наведении
       const sceneEl = document.querySelector('a-scene');
       const video = document.querySelector('#vid');
-      sceneEl.addEventListener("arReady", (event) => {
-        console.log("AR готов!");
+      const errorMsg = document.querySelector('#error-msg');
+
+      // Если через 10 секунд всё еще загрузка — выводим подсказку
+      setTimeout(() => {
+        if (!sceneEl.hasLoaded) {
+          errorMsg.style.display = 'block';
+          errorMsg.innerText = "Слишком долгая загрузка. Проверьте интернет или файлы.";
+        }
+      }, 10000);
+
+      sceneEl.addEventListener("arReady", () => {
+        console.log("AR готова!");
       });
-      // Если маркер найден — запускаем видео, если потерян — ставим на паузу
+
       const targetEl = document.querySelector('[mindar-image-target]');
-      targetEl.addEventListener("targetFound", event => { video.play(); });
-      targetEl.addEventListener("targetLost", event => { video.pause(); });
+      targetEl.addEventListener("targetFound", () => { video.play(); });
+      targetEl.addEventListener("targetLost", () => { video.pause(); });
     </script>
   </body>
-
 </html>
