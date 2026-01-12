@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>Julia AR</title>
+    <title>AR Project</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-aframe.prod.js"></script>
     
@@ -12,21 +12,21 @@
             position: fixed; inset: 0; display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             color: white; background: #000; z-index: 10000;
-            font-family: sans-serif; text-align: center;
+            font-family: -apple-system, sans-serif; text-align: center;
         }
         #startBtn {
-            padding: 18px 36px; background: #ffffff; color: #000;
-            border: none; border-radius: 30px; font-size: 1.1rem;
-            font-weight: bold; cursor: pointer;
+            padding: 15px 30px; background: #22c55e; color: white;
+            border: none; border-radius: 25px; font-size: 1.1rem;
+            font-weight: bold; cursor: pointer; opacity: 0.5;
         }
-        #status { margin-top: 15px; font-size: 0.9rem; color: #aaa; }
+        #status { margin-top: 15px; font-size: 0.9rem; color: #888; padding: 0 20px; }
     </style>
 </head>
 <body>
 
     <div id="overlay">
-        <button id="startBtn">ОТКРЫТЬ КАМЕРУ</button>
-        <p id="status">Нажмите для запуска AR</p>
+        <button id="startBtn" disabled>ЗАГРУЗКА...</button>
+        <p id="status">Пожалуйста, подождите, библиотеки загружаются...</p>
     </div>
 
     <a-scene 
@@ -49,43 +49,49 @@
 
     <script>
         const startBtn = document.getElementById('startBtn');
-        const overlay = document.getElementById('overlay');
         const status = document.getElementById('status');
+        const overlay = document.getElementById('overlay');
         const sceneEl = document.querySelector('a-scene');
 
-        startBtn.addEventListener('click', () => {
-            status.innerText = "Загрузка... Разрешите доступ к камере";
-            
-            // 1. Пытаемся запустить AR-систему
-            const arSystem = sceneEl.systems["mindar-image-system"];
-            arSystem.start(); 
+        // Проверяем готовность библиотек каждые 500мс
+        const checkLoad = setInterval(() => {
+            if (typeof AFRAME !== 'undefined' && sceneEl.systems["mindar-image-system"]) {
+                startBtn.innerText = "ОТКРЫТЬ КАМЕРУ";
+                startBtn.style.opacity = "1";
+                startBtn.disabled = false;
+                status.innerText = "Все готово! Нажмите кнопку";
+                clearInterval(checkLoad);
+            }
+        }, 500);
 
-            // 2. Разблокируем видео для iOS
+        startBtn.addEventListener('click', () => {
+            status.innerText = "Разрешите доступ к камере в системном окне...";
+            
+            // Запуск видео для iOS (обязательный шаг)
             const video = document.querySelector('#vid');
             video.play().then(() => video.pause());
 
-            // 3. Ждем готовности камеры
+            // Запуск AR
+            const arSystem = sceneEl.systems["mindar-image-system"];
+            arSystem.start(); 
+
             sceneEl.addEventListener("arReady", () => {
                 overlay.style.display = "none";
             });
 
-            // 4. Обработка ошибки
-            sceneEl.addEventListener("arError", () => {
-                status.innerText = "Ошибка: не удалось запустить камеру. Проверьте настройки браузера.";
-                status.style.color = "red";
+            sceneEl.addEventListener("arError", (e) => {
+                status.innerText = "Ошибка камеры. Проверьте настройки Safari/Chrome";
+                status.style.color = "#ef4444";
             });
         });
 
-        // Логика появления видео при наведении
+        // Логика появления видео
         const targetEntity = document.querySelector('#target');
-        const videoElement = document.querySelector('#vid');
-
         targetEntity.addEventListener("targetFound", () => {
-            videoElement.play();
+            document.querySelector('#vid').play();
         });
-
         targetEntity.addEventListener("targetLost", () => {
-            videoElement.pause();
+            document.querySelector('#vid').pause();
         });
     </script>
 </body>
