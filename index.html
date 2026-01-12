@@ -4,22 +4,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="./aframe.min.js"></script>
     <script src="./mindar.js"></script>
-    
-    <style>
-      /* Убираем лишние кнопки и белые полосы */
-      body { margin: 0; overflow: hidden; }
-      #error-msg {
-        position: fixed; top: 10px; left: 10px; color: white; background: red; z-index: 999; display: none;
-      }
-    </style>
   </head>
   <body>
-    <div id="error-msg">Ошибка загрузки! Проверьте файлы.</div>
-
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiScanning: yes;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-scene 
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiScanning: yes;" 
+      color-space="sRGB" 
+      renderer="colorManagement: true, physicallyCorrectLights" 
+      vr-mode-ui="enabled: false" 
+      device-orientation-permission-ui="enabled: false">
       
       <a-assets>
-        <video id="vid" src="video.mp4" preload="auto" loop="true" muted playsinline webkit-playsinline crossorigin="anonymous"></video>
+        <video id="vid" src="./video.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
@@ -32,28 +27,16 @@
     <script>
       const sceneEl = document.querySelector('a-scene');
       const video = document.querySelector('#vid');
-      const errorMsg = document.querySelector('#error-msg');
-
-      // Если через 10 секунд всё еще загрузка — выводим подсказку
-      setTimeout(() => {
-        if (!sceneEl.hasLoaded) {
-          errorMsg.style.display = 'block';
-          errorMsg.innerText = "Слишком долгая загрузка. Проверьте интернет или файлы.";
-        }
-      }, 10000);
-
-      sceneEl.addEventListener("arReady", () => {
-        console.log("AR готова!");
-      });
-
       const targetEl = document.querySelector('[mindar-image-target]');
+
+      // Активация видео по первому клику (нужно для некоторых телефонов)
+      document.body.addEventListener('click', () => {
+          video.play();
+          video.pause();
+      }, {once: true});
+
       targetEl.addEventListener("targetFound", () => { video.play(); });
       targetEl.addEventListener("targetLost", () => { video.pause(); });
     </script>
   </body>
 </html>
-
-
-
-
-
