@@ -1,16 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://lib.baomitu.com/aframe/1.5.0/aframe.min.js"></script>
     <script src="https://unpkg.com/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     
     <style>
-      /* Убираем лишние отступы, чтобы камера была на весь экран */
+      /* Убираем отступы и фиксируем экран */
       body { margin: 0; overflow: hidden; }
+      
+      /* Подсказка для пользователя, если камера долго не грузится */
+      #ui-overlay {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 1000;
+        color: white;
+        font-family: sans-serif;
+        background: rgba(0,0,0,0.5);
+        padding: 5px 10px;
+        border-radius: 5px;
+        pointer-events: none;
+      }
     </style>
   </head>
   <body>
+    <div id="ui-overlay">Наведи камеру на фото</div>
+
     <a-scene 
       mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiScanning: yes;" 
       color-space="sRGB" 
@@ -24,30 +40,34 @@
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity mindar-image-target="targetIndex: 0">
+      <a-entity id="targetGroup" mindar-image-target="targetIndex: 0" visible="false">
         <a-video src="#vid" width="1" height="0.6" position="0 0 0"></a-video>
       </a-entity>
     </a-scene>
 
     <script>
       const video = document.querySelector('#vid');
-      const targetEl = document.querySelector('[mindar-image-target]');
+      const targetGroup = document.querySelector('#targetGroup');
 
-      // На многих телефонах видео не запустится, пока пользователь не нажмет на экран.
-      // Этот обработчик "размораживает" видео при первом клике.
+      // 1. Активация аудио-контекста: нажать на экран один раз после загрузки, 
+      // чтобы браузер разрешил проигрывание видео.
       document.body.addEventListener('click', () => {
           video.play();
           video.pause();
-          console.log("Видео готово к воспроизведению");
+          console.log("Видео готово");
       }, {once: true});
 
-      // События: когда нашли картинку — играем, когда потеряли — пауза.
-      targetEl.addEventListener("targetFound", () => { 
-          console.log("Маркер найден!");
+      // 2. Событие: МАРКЕР НАЙДЕН
+      targetGroup.addEventListener("targetFound", () => { 
+          console.log("Фото распознано");
+          targetGroup.setAttribute("visible", "true"); // Показываем видео
           video.play(); 
       });
-      targetEl.addEventListener("targetLost", () => { 
-          console.log("Маркер потерян");
+
+      // 3. Событие: МАРКЕР ПОТЕРЯН
+      targetGroup.addEventListener("targetLost", () => { 
+          console.log("Фото потеряно");
+          targetGroup.setAttribute("visible", "false"); // Скрываем видео
           video.pause(); 
       });
     </script>
