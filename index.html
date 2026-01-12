@@ -1,44 +1,55 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
-<script src="https://cdn.rawgit.com/hiukim/mind-ar-js/v1.2.5/dist/mindar-image-aframe.prod.js"></script>
-</head>
-<body>
-    <a-scene mindar-image="imageTargetSrc: targets.mind?v=2;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-        <a-assets>
-            <video id="vid" src="video.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
-        </a-assets>
+    <script src="https://lib.baomitu.com/aframe/1.5.0/aframe.min.js"></script>
+    <script src="https://unpkg.com/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    
+    <style>
+      /* Убираем лишние отступы, чтобы камера была на весь экран */
+      body { margin: 0; overflow: hidden; }
+    </style>
+  </head>
+  <body>
+    <a-scene 
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiScanning: yes;" 
+      color-space="sRGB" 
+      renderer="colorManagement: true, physicallyCorrectLights" 
+      vr-mode-ui="enabled: false" 
+      device-orientation-permission-ui="enabled: false">
+      
+      <a-assets>
+        <video id="vid" src="./video.mp4" preload="auto" loop="true" muted playsinline webkit-playsinline crossorigin="anonymous"></video>
+      </a-assets>
 
-        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <a-entity mindar-image-target="targetIndex: 0">
-            <a-video src="#vid" width="1" height="1" position="0 0 0"></a-video>
-        </a-entity>
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-video src="#vid" width="1" height="0.6" position="0 0 0"></a-video>
+      </a-entity>
     </a-scene>
 
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const sceneEl = document.querySelector('a-scene');
-            const video = document.querySelector('#vid');
-            const targetEl = document.querySelector('[mindar-image-target]');
+      const video = document.querySelector('#vid');
+      const targetEl = document.querySelector('[mindar-image-target]');
 
-            // Пытаемся запустить видео по первому клику, если браузер блокирует автоплей
-            document.body.addEventListener('click', () => {
-                video.play();
-                video.pause();
-                console.log("Аудио-контекст активирован");
-            }, {once: true});
+      // На многих телефонах видео не запустится, пока пользователь не нажмет на экран.
+      // Этот обработчик "размораживает" видео при первом клике.
+      document.body.addEventListener('click', () => {
+          video.play();
+          video.pause();
+          console.log("Видео готово к воспроизведению");
+      }, {once: true});
 
-            targetEl.addEventListener("targetFound", () => { 
-                console.log("Мишень найдена");
-                video.play(); 
-            });
-            targetEl.addEventListener("targetLost", () => { 
-                video.pause(); 
-            });
-        });
+      // События: когда нашли картинку — играем, когда потеряли — пауза.
+      targetEl.addEventListener("targetFound", () => { 
+          console.log("Маркер найден!");
+          video.play(); 
+      });
+      targetEl.addEventListener("targetLost", () => { 
+          console.log("Маркер потерян");
+          video.pause(); 
+      });
     </script>
-</body>
+  </body>
 </html>
