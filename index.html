@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="./aframe-v1.js"></script>
@@ -7,17 +7,17 @@
     
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; }
-        /* Инструкция для пользователя */
-        #instruction {
+        #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; justify-content: center; align-items: center;
             color: white; z-index: 10; pointer-events: none; 
-            font-family: sans-serif; text-align: center; padding: 20px;
+            font-family: sans-serif; text-align: center;
+            background: rgba(0,0,0,0.5);
         }
     </style>
 </head>
 <body>
-    <div id="instruction">Загрузка... <br> (если ничего не происходит, попробуйте нажать на экран)</div>
+    <div id="overlay">Инициализация камеры...<br>Нажми на экран, если зависло</div>
 
     <a-scene 
         mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiScanning: yes;" 
@@ -38,32 +38,36 @@
     </a-scene>
 
     <script>
-        const instruction = document.getElementById('instruction');
+        const overlay = document.getElementById('overlay');
         const sceneEl = document.querySelector('a-scene');
         const targetEl = document.querySelector('#target');
         const arVideo = document.querySelector('#ar-video');
         const videoFile = document.querySelector('#vid');
 
-        // Когда система дополненной реальности готова
+        // Когда система AR готова (камера включилась)
         sceneEl.addEventListener("arReady", () => {
-            instruction.innerHTML = "Наведи камеру на фотографию";
-            // Через 5 секунд скрываем надпись совсем
-            setTimeout(() => { instruction.style.display = 'none'; }, 5000);
+            overlay.innerHTML = "Наведи на фото";
+            setTimeout(() => { overlay.style.display = 'none'; }, 3000);
         });
 
-        // Событие: Фото найдено
+        // Если возникла ошибка с камерой
+        sceneEl.addEventListener("arError", () => {
+            overlay.innerHTML = "Ошибка доступа к камере";
+        });
+
+        // Появление видео на маркере
         targetEl.addEventListener("targetFound", () => {
             arVideo.setAttribute("visible", "true");
             videoFile.play();
         });
 
-        // Событие: Фото потеряно из вида
+        // Исчезновение видео
         targetEl.addEventListener("targetLost", () => {
             arVideo.setAttribute("visible", "false");
             videoFile.pause();
         });
 
-        // Обязательный клик для разблокировки видео в браузерах
+        // Разблокировка видео по клику
         document.body.addEventListener('click', () => {
             videoFile.play().then(() => videoFile.pause());
         }, {once: true});
