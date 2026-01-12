@@ -2,7 +2,8 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>AR Project</title>
+    <title>AR Project Final</title>
+    
     <script src="./aframe.js"></script>
     <script src="./mindar.js"></script>
     
@@ -17,11 +18,13 @@
             padding: 15px 30px; background: #22c55e; color: white;
             border: none; border-radius: 25px; font-weight: bold; cursor: pointer;
         }
+        #status { margin-top: 15px; color: #888; font-size: 14px; }
     </style>
 </head>
 <body>
     <div id="overlay">
-        <button id="startBtn">ЗАПУСТИТЬ AR</button>
+        <button id="startBtn">ОТКРЫТЬ КАМЕРУ</button>
+        <div id="status">Нажмите кнопку для запуска</div>
     </div>
 
     <a-scene 
@@ -35,49 +38,53 @@
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
         <a-entity id="target" mindar-image-target="targetIndex: 0">
-            <a-video src="#vid" width="1" height="0.6"></a-video>
+            <a-video src="#vid" width="1" height="0.6" position="0 0 0"></a-video>
         </a-entity>
     </a-scene>
 
     <script>
         const startBtn = document.getElementById('startBtn');
         const overlay = document.getElementById('overlay');
+        const status = document.getElementById('status');
         const sceneEl = document.querySelector('a-scene');
 
         startBtn.addEventListener('click', () => {
-            console.log("Кнопка нажата");
+            status.innerText = "Запуск системы...";
             
-            // 1. Проверяем, живы ли библиотеки
-            if (typeof AFRAME === 'undefined') {
-                alert("Ошибка: aframe.js не загрузился. Проверьте содержимое файла!");
-                return;
-            }
+            // Даем маленькую задержку, чтобы браузер успел обработать библиотеки
+            setTimeout(() => {
+                try {
+                    const arSystem = sceneEl.systems["mindar-image-system"];
+                    
+                    if (arSystem) {
+                        arSystem.start(); 
+                        
+                        // Разблокируем видео
+                        const video = document.querySelector('#vid');
+                        video.play().then(() => video.pause());
 
-            // 2. Принудительно запускаем видео (нужно для iOS)
-            const video = document.querySelector('#vid');
-            if (video) {
-                video.play().then(() => video.pause());
-            }
-
-            // 3. Запускаем систему MindAR
-            try {
-                const arSystem = sceneEl.systems["mindar-image-system"];
-                if (arSystem) {
-                    arSystem.start(); 
-                    console.log("MindAR запущен");
-                } else {
-                    alert("Ошибка: mindar.js не инициализирован");
+                        sceneEl.addEventListener("arReady", () => {
+                            overlay.style.display = "none";
+                        });
+                    } else {
+                        // Если система не нашлась, пробуем перезагрузить компоненты
+                        status.innerText = "Ошибка: MindAR не найден в сцене. Проверьте mindar.js";
+                        status.style.color = "red";
+                    }
+                } catch (e) {
+                    status.innerText = "Критическая ошибка: " + e.message;
                 }
-            } catch (e) {
-                alert("Критическая ошибка: " + e.message);
-            }
+            }, 300);
+        });
 
-            // 4. Скрываем экран, когда камера реально даст картинку
-            sceneEl.addEventListener("arReady", () => {
-                overlay.style.display = "none";
-            });
+        // Логика появления видео
+        const targetEntity = document.querySelector('#target');
+        targetEntity.addEventListener("targetFound", () => {
+            document.querySelector('#vid').play();
+        });
+        targetEntity.addEventListener("targetLost", () => {
+            document.querySelector('#vid').pause();
         });
     </script>
 </body>
 </html>
-
