@@ -1,60 +1,82 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    
-    <script src="https://lib.baomitu.com/aframe/1.3.0/aframe.min.js"></script>
-    <script src="https://cdn.staticfile.org/mind-ar/1.2.1/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-aframe.prod.js"></script>
     
     <style>
-      body { margin: 0; overflow: hidden; }
-      /* Скрываем видео до момента распознавания */
-      #target-entity { visibility: hidden; }
+        body { margin: 0; overflow: hidden; }
+        /* Показываем надпись, пока система грузится */
+        #loading-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: black; color: white; display: flex;
+            justify-content: center; align-items: center; z-index: 9999;
+        }
     </style>
-  </head>
-  <body>
+</head>
+<body>
+    <div id="loading-screen">Загрузка дополненной реальности...</div>
 
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiScanning: yes;" 
-      color-space="sRGB" 
-      renderer="colorManagement: true, physicallyCorrectLights" 
-      vr-mode-ui="enabled: false" 
-      device-orientation-permission-ui="enabled: false">
-      
-      <a-assets>
-        <video id="vid" src="./video.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
-      </a-assets>
+        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiScanning: yes;" 
+        embedded color-space="sRGB" 
+        renderer="colorManagement: true, physicallyCorrectLights" 
+        vr-mode-ui="enabled: false" 
+        device-orientation-permission-ui="enabled: false">
+        
+        <a-assets>
+            <video id="vid" src="./video.mp4" loop="true" crossorigin="anonymous" muted playsinline webkit-playsinline></video>
+        </a-assets>
 
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity id="target-entity" mindar-image-target="targetIndex: 0">
-        <a-video src="#vid" width="1" height="0.6" position="0 0 0"></a-video>
-      </a-entity>
+        <a-entity id="target" mindar-image-target="targetIndex: 0">
+            </a-entity>
     </a-scene>
 
     <script>
-      const video = document.querySelector('#vid');
-      const targetEntity = document.querySelector('#target-entity');
+        const sceneEl = document.querySelector('a-scene');
+        const targetEl = document.querySelector('#target');
+        const loadingScreen = document.querySelector('#loading-screen');
+        const video = document.querySelector('#vid');
 
-      // Активация видео по клику (нужна для браузеров)
-      document.body.addEventListener('click', () => {
-          video.play();
-          video.pause();
-      }, {once: true});
+        // Скрываем экран загрузки, когда сцена готова
+        sceneEl.addEventListener("arReady", () => {
+            loadingScreen.style.display = "none";
+        });
 
-      // Показываем видео только когда маркер найден
-      targetEntity.addEventListener("targetFound", () => {
-        targetEntity.setAttribute('visible', true);
-        targetEntity.style.visibility = "visible";
-        video.play();
-      });
+        // Если случилась ошибка
+        sceneEl.addEventListener("arError", () => {
+            loadingScreen.innerHTML = "Ошибка: Камера не поддерживается или блокируется";
+        });
 
-      // Скрываем видео, когда маркер потерян
-      targetEntity.addEventListener("targetLost", () => {
-        targetEntity.setAttribute('visible', false);
-        targetEntity.style.visibility = "hidden";
-        video.pause();
-      });
+        // ГЛАВНАЯ ЛОГИКА: Добавляем видео только когда маркер найден
+        targetEl.addEventListener("targetFound", () => {
+            console.log("Найден!");
+            // Создаем элемент видео только в момент нахождения
+            let videoModel = document.createElement('a-video');
+            videoModel.setAttribute('src', '#vid');
+            videoModel.setAttribute('width', '1');
+            videoModel.setAttribute('height', '0.6');
+            videoModel.setAttribute('id', 'active-video');
+            targetEl.appendChild(videoModel);
+            video.play();
+        });
+
+        targetEl.addEventListener("targetLost", () => {
+            console.log("Потерян");
+            video.pause();
+            // Удаляем видео из сцены совсем
+            const activeVideo = document.querySelector('#active-video');
+            if (activeVideo) activeVideo.remove();
+        });
+
+        // Разблокировка видео по клику
+        document.body.addEventListener('click', () => {
+            video.play();
+            video.pause();
+        }, {once: true});
     </script>
-  </body>
+</body>
 </html>
