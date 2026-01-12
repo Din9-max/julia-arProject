@@ -45,13 +45,34 @@
         const sceneEl = document.querySelector('a-scene');
 
         startBtn.addEventListener('click', () => {
-            // Проверка, загрузились ли локальные файлы
+            console.log("Кнопка нажата");
+            
+            // 1. Проверяем, живы ли библиотеки
             if (typeof AFRAME === 'undefined') {
-                alert("Ошибка: Файл aframe.js пуст или не загружен");
+                alert("Ошибка: aframe.js не загрузился. Проверьте содержимое файла!");
                 return;
             }
-            const arSystem = sceneEl.systems["mindar-image-system"];
-            arSystem.start(); 
+
+            // 2. Принудительно запускаем видео (нужно для iOS)
+            const video = document.querySelector('#vid');
+            if (video) {
+                video.play().then(() => video.pause());
+            }
+
+            // 3. Запускаем систему MindAR
+            try {
+                const arSystem = sceneEl.systems["mindar-image-system"];
+                if (arSystem) {
+                    arSystem.start(); 
+                    console.log("MindAR запущен");
+                } else {
+                    alert("Ошибка: mindar.js не инициализирован");
+                }
+            } catch (e) {
+                alert("Критическая ошибка: " + e.message);
+            }
+
+            // 4. Скрываем экран, когда камера реально даст картинку
             sceneEl.addEventListener("arReady", () => {
                 overlay.style.display = "none";
             });
@@ -59,3 +80,4 @@
     </script>
 </body>
 </html>
+
