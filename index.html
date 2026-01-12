@@ -2,20 +2,20 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://ajax.googleapis.com/ajax/libs/model-viewer/1.12.0/model-viewer.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.5/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://unpkg.com/mind-ar@1.1.5/dist/mindar-image-aframe.prod.js"></script>
     
     <style>
         body { margin: 0; overflow: hidden; background: #000; }
         #status {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: white; z-index: 100; font-family: sans-serif; text-align: center;
+            position: fixed; top: 20px; left: 20px; right: 20px;
+            color: #00ff00; z-index: 1000; font-family: monospace;
+            text-align: center; background: rgba(0,0,0,0.7); padding: 10px;
         }
     </style>
 </head>
 <body>
-    <div id="status">Загрузка дополненной реальности...<br>Пожалуйста, подождите</div>
+    <div id="status">Проверка связи с сервером AR...</div>
 
     <a-scene 
         mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiScanning: yes;" 
@@ -38,35 +38,23 @@
     <script>
         const status = document.getElementById('status');
         const sceneEl = document.querySelector('a-scene');
-        const targetEl = document.querySelector('#target');
-        const arVideo = document.querySelector('#ar-video');
-        const videoFile = document.querySelector('#vid');
 
-        // Когда камера готова
+        // Если через 10 секунд всё еще висит загрузка
+        const timeout = setTimeout(() => {
+            status.innerHTML = "Слишком долгая загрузка. <br> Попробуйте включить VPN или сменить сеть (Wi-Fi/4G)";
+            status.style.color = "orange";
+        }, 15000);
+
         sceneEl.addEventListener("arReady", () => {
-            status.innerHTML = "ГОТОВО! Наведи на фото";
-            setTimeout(() => { status.style.display = 'none'; }, 3000);
+            clearTimeout(timeout);
+            status.innerHTML = "КАМЕРА ГОТОВА! Наведи на маркер";
+            setTimeout(() => { status.style.display = 'none'; }, 4000);
         });
 
-        // Если ошибка
         sceneEl.addEventListener("arError", () => {
-            status.innerHTML = "Ошибка: Камера заблокирована";
+            status.innerHTML = "ОШИБКА: Доступ к камере запрещен";
+            status.style.color = "red";
         });
-
-        targetEl.addEventListener("targetFound", () => {
-            arVideo.setAttribute("visible", "true");
-            videoFile.play();
-        });
-
-        targetEl.addEventListener("targetLost", () => {
-            arVideo.setAttribute("visible", "false");
-            videoFile.pause();
-        });
-
-        // Клик для активации звука/видео
-        window.addEventListener('click', () => {
-            videoFile.play().then(() => videoFile.pause());
-        }, {once: true});
     </script>
 </body>
 </html>
