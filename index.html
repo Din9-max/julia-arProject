@@ -7,44 +7,65 @@
     
     <style>
       body { margin: 0; overflow: hidden; }
+      
+      /* Принудительно скрываем сцену, пока она не будет готова */
+      #ar-target {
+        display: none; 
+      }
+      
+      /* Если у вас iPhone, это поможет избежать белого экрана */
+      video {
+        object-fit: cover;
+      }
     </style>
   </head>
   <body>
+
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; uiLoading: yes; uiScanning: yes;" 
+      mindar-image="imageTargetSrc: ./targets.mind; uiLoading: yes; uiScanning: yes; autoStart: true;" 
       color-space="sRGB" 
       renderer="colorManagement: true, physicallyCorrectLights" 
       vr-mode-ui="enabled: false" 
       device-orientation-permission-ui="enabled: false">
       
       <a-assets>
-        <video id="vid" src="./video.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
+        <video id="vid" src="./video.mp4" loop="true" crossorigin="anonymous" muted playsinline webkit-playsinline></video>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity id="ar-target" mindar-image-target="targetIndex: 0">
+      <a-entity id="ar-target" mindar-image-target="targetIndex: 0" visible="false">
         <a-video src="#vid" width="1" height="0.6" position="0 0 0"></a-video>
       </a-entity>
     </a-scene>
 
     <script>
       const video = document.querySelector('#vid');
-      const targetEl = document.querySelector('#ar-target');
+      const targetEntity = document.querySelector('#ar-target');
 
-      // Активация звука/видео по клику
+      // 1. Фикс для браузеров: активация видео при первом клике
       document.body.addEventListener('click', () => {
           video.play();
           video.pause();
       }, {once: true});
 
-      targetEl.addEventListener("targetFound", () => {
+      // 2. Логика появления
+      targetEntity.addEventListener("targetFound", () => {
+        console.log("Найден!");
+        // Показываем сущность и запускаем видео
+        targetEntity.setAttribute("visible", "true");
+        // Важный момент для CSS (если использовали display:none)
+        targetEntity.style.display = "block"; 
         video.play();
       });
 
-      targetEl.addEventListener("targetLost", () => {
+      // 3. Логика исчезновения
+      targetEntity.addEventListener("targetLost", () => {
+        console.log("Потерян");
+        targetEntity.setAttribute("visible", "false");
         video.pause();
       });
     </script>
   </body>
+  </html>
 </html>
