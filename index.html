@@ -2,21 +2,20 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.2.0/aframe.min.js"></script>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-aframe.prod.js"></script>
     
     <style>
-        body { margin: 0; overflow: hidden; }
-        /* Показываем надпись, пока система грузится */
-        #loading-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: black; color: white; display: flex;
-            justify-content: center; align-items: center; z-index: 9999;
+        body { margin: 0; overflow: hidden; background-color: #000; }
+        #debug-info {
+            position: fixed; top: 10px; left: 10px; z-index: 10000;
+            color: lime; font-family: monospace; font-size: 12px;
+            background: rgba(0,0,0,0.8); pointer-events: none;
         }
     </style>
 </head>
 <body>
-    <div id="loading-screen">Загрузка дополненной реальности...</div>
+    <div id="debug-info">Статус: Инициализация...</div>
 
     <a-scene 
         mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiScanning: yes;" 
@@ -26,56 +25,49 @@
         device-orientation-permission-ui="enabled: false">
         
         <a-assets>
-            <video id="vid" src="./video.mp4" loop="true" crossorigin="anonymous" muted playsinline webkit-playsinline></video>
+            <video id="vid" src="./video.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity id="target" mindar-image-target="targetIndex: 0">
-            </a-entity>
+            <a-video src="#vid" width="1" height="0.6" visible="false"></a-video>
+        </a-entity>
     </a-scene>
 
     <script>
+        const info = document.getElementById('debug-info');
         const sceneEl = document.querySelector('a-scene');
         const targetEl = document.querySelector('#target');
-        const loadingScreen = document.querySelector('#loading-screen');
-        const video = document.querySelector('#vid');
+        const videoEl = document.querySelector('a-video');
+        const videoFile = document.querySelector('#vid');
 
-        // Скрываем экран загрузки, когда сцена готова
+        // Отслеживаем этапы загрузки
         sceneEl.addEventListener("arReady", () => {
-            loadingScreen.style.display = "none";
+            info.innerHTML = "Статус: Камера включена. Наведи на маркер!";
+            setTimeout(() => { info.style.display = 'none'; }, 3000);
         });
 
-        // Если случилась ошибка
-        sceneEl.addEventListener("arError", () => {
-            loadingScreen.innerHTML = "Ошибка: Камера не поддерживается или блокируется";
+        sceneEl.addEventListener("arError", (event) => {
+            info.innerHTML = "Статус: ОШИБКА КАМЕРЫ! " + event.detail.error;
+            info.style.color = "red";
         });
 
-        // ГЛАВНАЯ ЛОГИКА: Добавляем видео только когда маркер найден
         targetEl.addEventListener("targetFound", () => {
-            console.log("Найден!");
-            // Создаем элемент видео только в момент нахождения
-            let videoModel = document.createElement('a-video');
-            videoModel.setAttribute('src', '#vid');
-            videoModel.setAttribute('width', '1');
-            videoModel.setAttribute('height', '0.6');
-            videoModel.setAttribute('id', 'active-video');
-            targetEl.appendChild(videoModel);
-            video.play();
+            info.style.display = 'block';
+            info.innerHTML = "МАРКЕР НАЙДЕН";
+            videoEl.setAttribute("visible", "true");
+            videoFile.play();
         });
 
         targetEl.addEventListener("targetLost", () => {
-            console.log("Потерян");
-            video.pause();
-            // Удаляем видео из сцены совсем
-            const activeVideo = document.querySelector('#active-video');
-            if (activeVideo) activeVideo.remove();
+            videoEl.setAttribute("visible", "false");
+            videoFile.pause();
         });
 
-        // Разблокировка видео по клику
+        // Попытка принудительно запустить камеру при клике, если она зависла
         document.body.addEventListener('click', () => {
-            video.play();
-            video.pause();
+            videoFile.play().then(() => videoFile.pause());
         }, {once: true});
     </script>
 </body>
