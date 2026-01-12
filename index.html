@@ -4,68 +4,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="./aframe-v1.js"></script>
     <script src="./mindar-v1.js"></script>
-    
     <style>
       body { margin: 0; overflow: hidden; }
-      
-      /* Принудительно скрываем сцену, пока она не будет готова */
-      #ar-target {
-        display: none; 
-      }
-      
-      /* Если у вас iPhone, это поможет избежать белого экрана */
-      video {
-        object-fit: cover;
-      }
+      /* Скрываем всё, пока сканер не найдет цель */
+      #target-container { visibility: hidden; }
     </style>
   </head>
   <body>
-
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; uiLoading: yes; uiScanning: yes; autoStart: true;" 
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiScanning: yes; uiError: yes;" 
       color-space="sRGB" 
       renderer="colorManagement: true, physicallyCorrectLights" 
       vr-mode-ui="enabled: false" 
       device-orientation-permission-ui="enabled: false">
       
       <a-assets>
-        <video id="vid" src="./video.mp4" loop="true" crossorigin="anonymous" muted playsinline webkit-playsinline></video>
+        <video id="vid" src="./video.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity id="ar-target" mindar-image-target="targetIndex: 0" visible="false">
+      <a-entity id="target-container" mindar-image-target="targetIndex: 0" visible="false">
         <a-video src="#vid" width="1" height="0.6" position="0 0 0"></a-video>
       </a-entity>
     </a-scene>
 
     <script>
+      const sceneEl = document.querySelector('a-scene');
+      const targetEl = document.querySelector('#target-container');
       const video = document.querySelector('#vid');
-      const targetEntity = document.querySelector('#ar-target');
 
-      // 1. Фикс для браузеров: активация видео при первом клике
-      document.body.addEventListener('click', () => {
-          video.play();
-          video.pause();
-      }, {once: true});
+      // 1. Ждем полной загрузки сцены
+      sceneEl.addEventListener("renderstart", () => {
+        console.log("Сцена запущена");
+      });
 
-      // 2. Логика появления
-      targetEntity.addEventListener("targetFound", () => {
-        console.log("Найден!");
-        // Показываем сущность и запускаем видео
-        targetEntity.setAttribute("visible", "true");
-        // Важный момент для CSS (если использовали display:none)
-        targetEntity.style.display = "block"; 
+      // 2. Слушаем события MindAR
+      targetEl.addEventListener("targetFound", () => {
+        console.log("Маркер найден!");
+        targetEl.setAttribute("visible", "true");
+        targetEl.style.visibility = "visible";
         video.play();
       });
 
-      // 3. Логика исчезновения
-      targetEntity.addEventListener("targetLost", () => {
-        console.log("Потерян");
-        targetEntity.setAttribute("visible", "false");
+      targetEl.addEventListener("targetLost", () => {
+        console.log("Маркер потерян");
+        targetEl.setAttribute("visible", "false");
+        targetEl.style.visibility = "hidden";
         video.pause();
       });
+
+      // 3. Фикс для включения видео по клику
+      document.body.addEventListener('click', () => {
+        video.play();
+        video.pause();
+      }, {once: true});
     </script>
   </body>
-  </html>
 </html>
