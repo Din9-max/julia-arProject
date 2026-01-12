@@ -2,8 +2,9 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.5/dist/mindar-image-aframe.prod.js"></script>
+    <title>Julia AR</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-aframe.prod.js"></script>
     
     <style>
         body { margin: 0; overflow: hidden; background: #000; }
@@ -14,73 +15,78 @@
             font-family: sans-serif; text-align: center;
         }
         #startBtn {
-            padding: 20px 40px; background: #22c55e; color: white;
-            border: none; border-radius: 50px; font-size: 1.2rem;
-            font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            padding: 18px 36px; background: #ffffff; color: #000;
+            border: none; border-radius: 30px; font-size: 1.1rem;
+            font-weight: bold; cursor: pointer;
         }
+        #status { margin-top: 15px; font-size: 0.9rem; color: #aaa; }
     </style>
 </head>
 <body>
 
     <div id="overlay">
-        <button id="startBtn">ЗАПУСТИТЬ КАМЕРУ</button>
-        <p id="status" style="margin-top: 20px; font-size: 0.8rem; color: #888;">
-            Нажми кнопку для старта
-        </p>
+        <button id="startBtn">ОТКРЫТЬ КАМЕРУ</button>
+        <p id="status">Нажмите для запуска AR</p>
     </div>
 
     <a-scene 
-    mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: no;" 
-    embedded 
-    color-space="sRGB" 
-    renderer="colorManagement: true, physicallyCorrectLights" 
-    vr-mode-ui="enabled: false" 
-    device-orientation-permission-ui="enabled: false">
+        mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: yes;" 
+        embedded color-space="sRGB" 
+        renderer="colorManagement: true, physicallyCorrectLights" 
+        vr-mode-ui="enabled: false" 
+        device-orientation-permission-ui="enabled: false">
         
         <a-assets>
             <video id="vid" src="./video.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
         <a-entity id="target" mindar-image-target="targetIndex: 0">
-            <a-video src="#vid" width="1" height="0.6"></a-video>
+            <a-video src="#vid" width="1" height="0.6" position="0 0 0"></a-video>
         </a-entity>
     </a-scene>
 
     <script>
         const startBtn = document.getElementById('startBtn');
-const status = document.getElementById('status');
-const overlay = document.getElementById('overlay');
-const sceneEl = document.querySelector('a-scene');
+        const overlay = document.getElementById('overlay');
+        const status = document.getElementById('status');
+        const sceneEl = document.querySelector('a-scene');
 
-startBtn.addEventListener('click', async () => {
-    status.innerText = "Инициализация...";
-    
-    try {
-        // 1. Пробуем разбудить видеофайл
-        const video = document.querySelector('#vid');
-        video.play().then(() => video.pause());
+        startBtn.addEventListener('click', () => {
+            status.innerText = "Загрузка... Разрешите доступ к камере";
+            
+            // 1. Пытаемся запустить AR-систему
+            const arSystem = sceneEl.systems["mindar-image-system"];
+            arSystem.start(); 
 
-        // 2. Ждем секунду, чтобы браузер «осознал» разрешение камеры
-        status.innerText = "Запуск видеопотока...";
-        
-        // 3. Запускаем систему MindAR
-        const arSystem = sceneEl.systems["mindar-image-system"];
-        if (arSystem) {
-            await arSystem.start(); // Ждем старта системы
-        }
+            // 2. Разблокируем видео для iOS
+            const video = document.querySelector('#vid');
+            video.play().then(() => video.pause());
 
-        // 4. Убираем заставку только когда камера реально готова
-        sceneEl.addEventListener("arReady", () => {
-            overlay.style.display = "none";
+            // 3. Ждем готовности камеры
+            sceneEl.addEventListener("arReady", () => {
+                overlay.style.display = "none";
+            });
+
+            // 4. Обработка ошибки
+            sceneEl.addEventListener("arError", () => {
+                status.innerText = "Ошибка: не удалось запустить камеру. Проверьте настройки браузера.";
+                status.style.color = "red";
+            });
         });
 
-    } catch (err) {
-        status.innerHTML = "Ошибка: " + err.message;
-        console.error(arError);
-    }
-});
+        // Логика появления видео при наведении
+        const targetEntity = document.querySelector('#target');
+        const videoElement = document.querySelector('#vid');
+
+        targetEntity.addEventListener("targetFound", () => {
+            videoElement.play();
+        });
+
+        targetEntity.addEventListener("targetLost", () => {
+            videoElement.pause();
+        });
     </script>
 </body>
 </html>
-
