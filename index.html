@@ -2,26 +2,31 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>AR Project</title>
-    <script type="module">
-        import 'https://esm.sh/aframe@1.2.0';
-        import 'https://esm.sh/mind-ar@1.1.5/dist/mindar-image-aframe.prod.js';
-    </script>
-
+    <script src="https://cdn.staticfile.org/aframe/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.staticfile.org/mind-ar/1.1.5/mindar-image-aframe.prod.js"></script>
+    
     <style>
         body { margin: 0; overflow: hidden; background: #000; }
-        #status-bar {
-            position: fixed; top: 0; width: 100%; padding: 15px;
-            background: rgba(0,0,0,0.8); color: #00ff00;
-            text-align: center; font-family: monospace; z-index: 1000;
+        #overlay {
+            position: fixed; inset: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            color: #00ff00; background: rgba(0,0,0,0.9); z-index: 10000;
+            font-family: monospace; text-align: center; padding: 20px;
+        }
+        button {
+            margin-top: 20px; padding: 10px 20px; background: #00ff00;
+            color: black; border: none; font-weight: bold; cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div id="status-bar">Установка соединения с AR-модулем...</div>
+    <div id="overlay">
+        <div id="text">ШАГ 1: Загрузка системы...</div>
+        <button id="startBtn" style="display:none;">ВКЛЮЧИТЬ КАМЕРУ</button>
+    </div>
 
     <a-scene 
-        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiScanning: yes;" 
+        mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: yes; uiScanning: yes;" 
         embedded color-space="sRGB" 
         renderer="colorManagement: true, physicallyCorrectLights" 
         vr-mode-ui="enabled: false" 
@@ -32,31 +37,42 @@
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
         <a-entity id="target" mindar-image-target="targetIndex: 0">
-            <a-video src="#vid" width="1" height="0.6" position="0 0 0"></a-video>
+            <a-video src="#vid" width="1" height="0.6"></a-video>
         </a-entity>
     </a-scene>
 
     <script>
-        const status = document.getElementById('status-bar');
-        
-        // Ждем загрузки сцены
-        document.querySelector('a-scene').addEventListener('loaded', () => {
-            status.innerHTML = "Система готова. Ожидание камеры...";
-        });
+        const sceneEl = document.querySelector('a-scene');
+        const overlay = document.getElementById('overlay');
+        const text = document.getElementById('text');
+        const btn = document.getElementById('startBtn');
 
-        // Когда AR запустилась
-        document.querySelector('a-scene').addEventListener('arReady', () => {
-            status.innerHTML = "КАМЕРА ВКЛЮЧЕНА! Наведите на фото";
-            setTimeout(() => { status.style.display = 'none'; }, 5000);
-        });
+        // Проверяем, загрузились ли скрипты
+        window.onload = () => {
+            if (typeof AFRAME === 'undefined') {
+                text.innerHTML = "ОШИБКА: Библиотеки заблокированы.<br>Пожалуйста, включите VPN на 1 минуту и обновите страницу.";
+                text.style.color = "red";
+            } else {
+                text.innerHTML = "Система готова к запуску";
+                btn.style.display = "block";
+            }
+        };
 
-        // Обработка клика (для старта видео)
-        window.addEventListener('click', () => {
-            const v = document.querySelector('#vid');
-            v.play(); 
-            status.innerHTML = "Поиск маркера активирован...";
+        btn.addEventListener('click', () => {
+            text.innerHTML = "Запрос доступа к камере...<br>(Нажмите 'Разрешить')";
+            btn.style.display = "none";
+            
+            // Запускаем AR вручную после клика
+            sceneEl.systems["mindar-image-system"].start();
+            
+            sceneEl.addEventListener("arReady", () => {
+                overlay.style.display = "none";
+            });
+
+            sceneEl.addEventListener("arError", () => {
+                text.innerHTML = "ОШИБКА: Камера недоступна.";
+            });
         });
     </script>
 </body>
