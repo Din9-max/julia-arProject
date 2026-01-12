@@ -28,7 +28,7 @@
     <div id="ui-overlay">Наведи камеру на фото</div>
 
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiScanning: yes;" 
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiScanning: yes; filterMinCF:0.001; filterBeta: 0.01;" 
       color-space="sRGB" 
       renderer="colorManagement: true, physicallyCorrectLights" 
       vr-mode-ui="enabled: false" 
@@ -40,36 +40,35 @@
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity id="targetGroup" mindar-image-target="targetIndex: 0" visible="false">
+      <a-entity id="ar-target" mindar-image-target="targetIndex: 0" visible="false">
         <a-video src="#vid" width="1" height="0.6" position="0 0 0"></a-video>
       </a-entity>
     </a-scene>
 
     <script>
       const video = document.querySelector('#vid');
-      const targetGroup = document.querySelector('#targetGroup');
+      const arTarget = document.querySelector('#ar-target');
 
-      // 1. Активация аудио-контекста: нажать на экран один раз после загрузки, 
-      // чтобы браузер разрешил проигрывание видео.
+      // 1. Активация по клику (нужна для браузеров)
       document.body.addEventListener('click', () => {
           video.play();
           video.pause();
-          console.log("Видео готово");
       }, {once: true});
 
-      // 2. Событие: МАРКЕР НАЙДЕН
-      targetGroup.addEventListener("targetFound", () => { 
-          console.log("Фото распознано");
-          targetGroup.setAttribute("visible", "true"); // Показываем видео
+      // 2. Когда фото НАЙДЕНО
+      arTarget.addEventListener("targetFound", () => {
+          console.log("Маркер найден!");
+          arTarget.setAttribute("visible", "true"); // Показываем видео
           video.play(); 
       });
 
-      // 3. Событие: МАРКЕР ПОТЕРЯН
-      targetGroup.addEventListener("targetLost", () => { 
-          console.log("Фото потеряно");
-          targetGroup.setAttribute("visible", "false"); // Скрываем видео
+      // 3. Когда фото ПОТЕРЯНО
+      arTarget.addEventListener("targetLost", () => {
+          console.log("Маркер потерян");
+          arTarget.setAttribute("visible", "false"); // Скрываем видео
           video.pause(); 
       });
     </script>
   </body>
 </html>
+
