@@ -3,37 +3,41 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>AR Project</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-aframe.prod.js"></script>
+    
+    <script src="https://unpkg.com/aframe@1.2.0/dist/aframe-master.min.js"></script>
+    <script src="https://unpkg.com/mind-ar@1.1.5/dist/mindar-image-aframe.prod.js"></script>
     
     <style>
-        body { margin: 0; overflow: hidden; background: #000; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
         #overlay {
             position: fixed; inset: 0; display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            color: white; background: #000; z-index: 10000;
-            font-family: -apple-system, sans-serif; text-align: center;
+            color: white; background: #111; z-index: 10000; text-align: center;
         }
-        #startBtn {
-            padding: 15px 30px; background: #22c55e; color: white;
-            border: none; border-radius: 25px; font-size: 1.1rem;
-            font-weight: bold; cursor: pointer; opacity: 0.5;
+        .loader {
+            border: 4px solid #333; border-top: 4px solid #22c55e;
+            border-radius: 50%; width: 40px; height: 40px;
+            animation: spin 1s linear infinite; margin-bottom: 20px;
         }
-        #status { margin-top: 15px; font-size: 0.9rem; color: #888; padding: 0 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        button {
+            display: none; padding: 15px 30px; background: #22c55e;
+            color: white; border: none; border-radius: 25px;
+            font-weight: bold; cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
     <div id="overlay">
-        <button id="startBtn" disabled>ЗАГРУЗКА...</button>
-        <p id="status">Пожалуйста, подождите, библиотеки загружаются...</p>
+        <div class="loader" id="spinner"></div>
+        <div id="status">Загрузка компонентов...</div>
+        <button id="startBtn">ЗАПУСТИТЬ КАМЕРУ</button>
     </div>
 
     <a-scene 
         mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: yes;" 
-        embedded color-space="sRGB" 
-        renderer="colorManagement: true, physicallyCorrectLights" 
-        vr-mode-ui="enabled: false" 
+        embedded vr-mode-ui="enabled: false" 
         device-orientation-permission-ui="enabled: false">
         
         <a-assets>
@@ -41,57 +45,47 @@
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
         <a-entity id="target" mindar-image-target="targetIndex: 0">
-            <a-video src="#vid" width="1" height="0.6" position="0 0 0"></a-video>
+            <a-video src="#vid" width="1" height="0.6"></a-video>
         </a-entity>
     </a-scene>
 
     <script>
         const startBtn = document.getElementById('startBtn');
         const status = document.getElementById('status');
+        const spinner = document.getElementById('spinner');
         const overlay = document.getElementById('overlay');
         const sceneEl = document.querySelector('a-scene');
 
-        // Проверяем готовность библиотек каждые 500мс
-        const checkLoad = setInterval(() => {
+        // Таймер на случай блокировки
+        const failTimer = setTimeout(() => {
+            if (typeof AFRAME === 'undefined') {
+                status.innerHTML = "Ошибка загрузки.<br><small>Ваш интернет блокирует доступ к AR-серверам.<br>Попробуйте включить VPN или сменить Wi-Fi на 4G.</small>";
+                spinner.style.display = "none";
+            }
+        }, 10000);
+
+        // Проверка готовности
+        const checkReady = setInterval(() => {
             if (typeof AFRAME !== 'undefined' && sceneEl.systems["mindar-image-system"]) {
-                startBtn.innerText = "ОТКРЫТЬ КАМЕРУ";
-                startBtn.style.opacity = "1";
-                startBtn.disabled = false;
-                status.innerText = "Все готово! Нажмите кнопку";
-                clearInterval(checkLoad);
+                clearInterval(checkReady);
+                clearTimeout(failTimer);
+                spinner.style.display = "none";
+                status.innerText = "Система готова!";
+                startBtn.style.display = "block";
             }
         }, 500);
 
         startBtn.addEventListener('click', () => {
-            status.innerText = "Разрешите доступ к камере в системном окне...";
+            status.innerText = "Открываю камеру...";
+            startBtn.style.display = "none";
             
-            // Запуск видео для iOS (обязательный шаг)
-            const video = document.querySelector('#vid');
-            video.play().then(() => video.pause());
-
-            // Запуск AR
             const arSystem = sceneEl.systems["mindar-image-system"];
             arSystem.start(); 
 
             sceneEl.addEventListener("arReady", () => {
                 overlay.style.display = "none";
             });
-
-            sceneEl.addEventListener("arError", (e) => {
-                status.innerText = "Ошибка камеры. Проверьте настройки Safari/Chrome";
-                status.style.color = "#ef4444";
-            });
-        });
-
-        // Логика появления видео
-        const targetEntity = document.querySelector('#target');
-        targetEntity.addEventListener("targetFound", () => {
-            document.querySelector('#vid').play();
-        });
-        targetEntity.addEventListener("targetLost", () => {
-            document.querySelector('#vid').pause();
         });
     </script>
 </body>
