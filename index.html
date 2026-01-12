@@ -7,14 +7,11 @@
     
     <style>
       body { margin: 0; overflow: hidden; }
-      /* Стиль для рамки сканера (появится сама автоматически) */
-      .mindar-ui-scanning { background: rgba(0,0,0,0.5); }
     </style>
   </head>
   <body>
-
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; uiLoading: yes; uiScanning: yes; uiError: yes;" 
+      mindar-image="imageTargetSrc: ./targets.mind; uiLoading: yes; uiScanning: yes;" 
       color-space="sRGB" 
       renderer="colorManagement: true, physicallyCorrectLights" 
       vr-mode-ui="enabled: false" 
@@ -27,7 +24,7 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity id="ar-target" mindar-image-target="targetIndex: 0">
-        <a-video src="#vid" width="1" height="1" position="0 0 0"></a-video>
+        <a-video src="#vid" width="1" height="0.6" position="0 0 0"></a-video>
       </a-entity>
     </a-scene>
 
@@ -35,18 +32,19 @@
       const video = document.querySelector('#vid');
       const targetEl = document.querySelector('#ar-target');
 
-      // Очень важно: запускаем видео только при наведении
-      targetEl.addEventListener("targetFound", event => {
-        console.log("Маркер найден");
+      // Активация звука/видео по клику
+      document.body.addEventListener('click', () => {
+          video.play();
+          video.pause();
+      }, {once: true});
+
+      targetEl.addEventListener("targetFound", () => {
         video.play();
       });
 
-      targetEl.addEventListener("targetLost", event => {
-        console.log("Маркер потерян");
+      targetEl.addEventListener("targetLost", () => {
         video.pause();
       });
     </script>
   </body>
 </html>
-
-
