@@ -9,6 +9,8 @@
     <a-scene mindar-image="imageTargetSrc: targets.mind?v=2;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
         <a-assets>
             <video id="vid" src="video.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
+            //вторая картинка
+            <video id="vid2" src="video2.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
@@ -16,13 +18,19 @@
         <a-entity mindar-image-target="targetIndex: 0">
             <a-video src="#vid" width="1" height="1" position="0 0 0"></a-video>
         </a-entity>
+        //вторая картинка
+        <a-entity id="target2" mindar-image-target="targetIndex: 1">
+            <a-video src="#vid2" width="1" height="1" position="0 0 0"></a-video>
+        </a-entity>
+        
     </a-scene>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const sceneEl = document.querySelector('a-scene');
             const video = document.querySelector('#vid');
-            const targetEl = document.querySelector('[mindar-image-target]');
+            const video = document.querySelector('#2vid');
+            const targets = [document.querySelector('#target1'), document.querySelector('#target2')];
 
             // Пытаемся запустить видео по первому клику, если браузер блокирует автоплей
             document.body.addEventListener('click', () => {
@@ -42,5 +50,6 @@
     </script>
 </body>
 </html>
+
 
 
