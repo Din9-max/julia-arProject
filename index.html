@@ -2,54 +2,66 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="aframe.min.js"></script>
-    <script src="mindar-image-aframe.prod.js"></script>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
 </head>
 <body>
-    <a-scene mindar-image="imageTargetSrc: targets.mind?v=2;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-scene mindar-image="imageTargetSrc: targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+        
         <a-assets>
-            <video id="vid" src="video.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
-            //вторая картинка
-            <video id="vid2" src="video2.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
+            <video id="vid0" src="video1.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
+            <video id="vid1" src="video2.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity mindar-image-target="targetIndex: 0">
-            <a-video src="#vid" width="1" height="1" position="0 0 0"></a-video>
+            <a-video src="#vid0" width="1" height="1" position="0 0 0"></a-video>
         </a-entity>
-        //вторая картинка
-        <a-entity id="target2" mindar-image-target="targetIndex: 1">
-            <a-video src="#vid2" width="1" height="1" position="0 0 0"></a-video>
+
+        <a-entity mindar-image-target="targetIndex: 1">
+            <a-video src="#vid1" width="1" height="1" position="0 0 0"></a-video>
         </a-entity>
-        
+
     </a-scene>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const sceneEl = document.querySelector('a-scene');
-            const video = document.querySelector('#vid');
-            const video = document.querySelector('#2vid');
-            const targets = [document.querySelector('#target1'), document.querySelector('#target2')];
+            
+            // Находим все объекты-таргеты
+            const targetEntities = document.querySelectorAll('[mindar-image-target]');
 
-            // Пытаемся запустить видео по первому клику, если браузер блокирует автоплей
+            targetEntities.forEach((el) => {
+                // Получаем индекс из атрибута (0, 1, 2...)
+                const targetSettings = el.getAttribute('mindar-image-target');
+                const index = targetSettings.match(/\d+/)[0]; 
+                
+                // Находим видео, которое находится внутри этого таргета
+                const videoElement = el.querySelector('a-video');
+                const videoAsset = document.querySelector(videoElement.getAttribute('src'));
+
+                el.addEventListener("targetFound", () => {
+                    console.log(`Маркер №${index} найден`);
+                    videoAsset.play();
+                });
+
+                el.addEventListener("targetLost", () => {
+                    console.log(`Маркер №${index} потерян`);
+                    videoAsset.pause();
+                });
+            });
+
+            // Активация звука/видео по первому клику для мобильных браузеров
             document.body.addEventListener('click', () => {
-                video.play();
-                video.pause();
-                console.log("Аудио-контекст активирован");
+                const allVideos = document.querySelectorAll('video');
+                allVideos.forEach(v => {
+                    v.play();
+                    v.pause();
+                });
+                console.log("Видео-система готова");
             }, {once: true});
-
-            targetEl.addEventListener("targetFound", () => { 
-                console.log("Мишень найдена");
-                video.play(); 
-            });
-            targetEl.addEventListener("targetLost", () => { 
-                video.pause(); 
-            });
         });
     </script>
 </body>
 </html>
-
-
-
