@@ -11,6 +11,7 @@
         <a-assets>
             <video id="vid0" src="video1.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
             <video id="vid1" src="video2.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
+            <video id="vid2" src="video3.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
@@ -21,6 +22,10 @@
 
         <a-entity mindar-image-target="targetIndex: 1">
             <a-video src="#vid1" width="1" height="1" position="0 0 0"></a-video>
+        </a-entity>
+
+        <a-entity mindar-image-target="targetIndex: 2">
+            <a-video src="#vid2" width="1" height="1" position="0 0 0"></a-video>
         </a-entity>
 
     </a-scene>
@@ -65,4 +70,5 @@
     </script>
 </body>
 </html>
+
 
