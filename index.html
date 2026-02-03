@@ -1,19 +1,12 @@
-
+<!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AR Видео Маркеры</title>
-    <link rel="stylesheet" href="styles.css">
     <script src="aframe.min.js"></script>
     <script src="mindar-image-aframe.prod.js"></script>
 </head>
 <body>
-    <a-scene mindar-image="imageTargetSrc: targets.mind;" 
-             color-space="sRGB" 
-             renderer="colorManagement: true, physicallyCorrectLights" 
-             vr-mode-ui="enabled: false" 
-             device-orientation-permission-ui="enabled: false">
+    <a-scene mindar-image="imageTargetSrc: targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
         
         <a-assets>
             <video id="vid0" src="video.mp4" loop="true" crossorigin="anonymous" muted playsinline></video>
