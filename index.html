@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="aframe.min.js"></script>
+    <script src="mindar-image-aframe.prod.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        /* Стили для отладки (можно удалить) */
+        .debug-info { 
+            position: fixed; 
+            top: 10px; 
+            left: 10px; 
+            background: rgba(0,0,0,0.7); 
+            color: white; 
+            padding: 5px; 
+            border-radius: 5px;
+            z-index: 9999;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <a-scene 
+        mindar-image="imageTargetSrc: targets.mind; autoStart: true;" 
+        color-space="sRGB" 
+        renderer="colorManagement: true, physicallyCorrectLights" 
+        vr-mode-ui="enabled: false" 
+        device-orientation-permission-ui="enabled: false"
+        embedded
+    >
+        
+        <a-assets>
+            
+            <video id="video0" src="video0.mp4" loop="true" crossorigin="anonymous" muted playsinline preload="auto"></video>
+            
+            
+            <video id="video1" src="video1.mp4" loop="true" crossorigin="anonymous" muted playsinline preload="auto"></video>
+            
+            
+            <video id="video2" src="video2.mp4" loop="true" crossorigin="anonymous" muted playsinline preload="auto"></video>
+            
+        </a-assets>
+
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <!-- МАРКЕР 0 -->
+        <a-entity mindar-image-target="targetIndex: 0">
+            <a-video src="#video0" width="1" height="1" position="0 0 0"></a-video>
+        </a-entity>
+
+        <!-- МАРКЕР 1 -->
+        <a-entity mindar-image-target="targetIndex: 1">
+            <a-video src="#video1" width="1" height="1" position="0 0 0"></a-video>
+        </a-entity>
+
+        <!-- МАРКЕР 2 -->
+        <a-entity mindar-image-target="targetIndex: 2">
+            <a-video src="#video2" width="1" height="1" position="0 0 0"></a-video>
+        </a-entity>
+
+        <!-- Добавляйте новые маркеры по аналогии -->
+        
+    </a-scene>
+
+    <!-- Встроенный JavaScript (бывший app.js) -->
+    <script>
+        (function() {
+            'use strict';
+            
+            // Функция для отладки (опционально)
+            function log(message) {
+                console.log(message);
+                // Раскомментируйте для отображения отладочной информации на экране
+                // const debugDiv = document.querySelector('.debug-info') || createDebugDiv();
+                // debugDiv.innerHTML += '<div>' + message + '</div>';
+            }
+            
+            // Создание элемента для отладки (опционально)
+            function createDebugDiv() {
+                const div = document.createElement('div');
+                div.className = 'debug-info';
+                document.body.appendChild(div);
+                return div;
+            }
+
+            document.addEventListener("DOMContentLoaded", () => {
+                const sceneEl = document.querySelector('a-scene');
+                
+                // Проверяем наличие MindAR
+                if (!sceneEl.hasAttribute('mindar-image')) {
+                    console.error('MindAR не инициализирован');
+                    return;
+                }
+                
+                // Находим все объекты-таргеты
+                const targetEntities = document.querySelectorAll('[mindar-image-target]');
+                
+                log(`Найдено маркеров: ${targetEntities.length}`);
+
+                targetEntities.forEach((el) => {
+                    // Получаем индекс из атрибута
+                    const targetSettings = el.getAttribute('mindar-image-target');
+                    let index = '?';
+                    
+                    if (typeof targetSettings === 'string') {
+                        const match = targetSettings.match(/\d+/);
+                        if (match) index = match[0];
+                    } else if (targetSettings && targetSettings.targetIndex !== undefined) {
+                        index = targetSettings.targetIndex;
+                    }
+                    
+                    // Находим видео внутри таргета
+                    const videoEntity = el.querySelector('a-video');
+                    if (!videoEntity) {
+                        console.warn(`Маркер ${index} не содержит a-video`);
+                        return;
+                    }
+                    
+                    const videoSrc = videoEntity.getAttribute('src');
+                    if (!videoSrc) {
+                        console.warn(`Маркер ${index} не имеет источника видео`);
+                        return;
+                    }
+                    
+                    // Получаем ссылку на видео элемент
+                    let videoElement;
+                    if (videoSrc.startsWith('#')) {
+                        // Это ссылка на элемент в a-assets
+                        videoElement = document.querySelector(videoSrc);
+                    } else {
+                        // Прямой src
+                        videoElement = document.querySelector(`video[src="${videoSrc}"]`);
+                    }
+                    
+                    if (!videoElement) {
+                        console.warn(`Маркер ${index}: видео элемент не найден: ${videoSrc}`);
+                        return;
+                    }
+                    
+                    // Убеждаемся что видео muted для автоиграции
+                    videoElement.muted = true;
+                    
+                    // Событие обнаружения маркера
+                    el.addEventListener("targetFound", () => {
+                        log(`✅ Маркер №${index} найден - видео запущено`);
+                        
+                        // Важно: play() возвращает промис
+                        const playPromise = videoElement.play();
+                        
+                        if (playPromise !== undefined) {
+                            playPromise.catch(error => {
+                                console.error(`Ошибка воспроизведения видео ${index}:`, error);
+                                log(`❌ Ошибка видео ${index}: автозапуск заблокирован`);
+                            });
+                        }
+                    });
+
+                    // Событие потери маркера
+                    el.addEventListener("targetLost", () => {
+                        log(`❌ Маркер №${index} потерян - видео на паузе`);
+                        videoElement.pause();
+                    });
+                });
+
+                // Инициализация видео для мобильных браузеров
+                // Однократный клик по экрану активирует все видео
+                const initVideos = () => {
+                    const allVideos = document.querySelectorAll('video');
+                    log(`Инициализация видео: ${allVideos.length} элементов`);
+                    
+                    allVideos.forEach(v => {
+                        // Пробуем воспроизвести и сразу ставим на паузу
+                        // Это необходимо для обхода политик автозапуска на мобильных
+                        v.load(); // Принудительная загрузка
+                        
+                        const playPromise = v.play();
+                        if (playPromise !== undefined) {
+                            playPromise
+                                .then(() => {
+                                    v.pause();
+                                    log(`Видео готово к воспроизведению`);
+                                })
+                                .catch(e => {
+                                    console.warn('Не удалось инициализировать видео:', e);
+                                });
+                        }
+                    });
+                };
+
+                // Добавляем обработчик клика для инициализации
+                document.body.addEventListener('click', initVideos, { once: true });
+                
+                // Для отладки: показываем, что скрипт загружен
+                log('AR-скрипт загружен. Нажмите на экран для активации видео.');
+                
+                // Альтернатива для автоматической инициализации
+                // Некоторые браузеры позволяют активировать видео при касании
+                document.body.addEventListener('touchstart', initVideos, { once: true });
+            });
+        })();
+    </script>
+</body>
+</html>
